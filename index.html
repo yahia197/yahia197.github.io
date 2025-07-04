@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Survey Target Calculator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .gradient-bg {
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type="number"] {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    label {
+      color: #ddd;
+    }
+
+    .metric-card,
+    .glass-card {
+      transition: all 0.3s ease-in-out;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .needs-surveys {
+      background-color: rgba(255, 99, 132, 0.1);
+      border: 1px solid rgba(255, 99, 132, 0.4);
+    }
+
+    .no-surveys-needed {
+      background-color: rgba(102, 255, 153, 0.1);
+      border: 1px solid rgba(102, 255, 153, 0.4);
+    }
+
+    .text-heading {
+      background: linear-gradient(to right, #ffffff, #d4fc79);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .glass-button {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      color: white;
+    }
+
+    .glass-button:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+  </style>
+</head>
+
+<body class="gradient-bg min-h-screen font-sans">
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-10">
+        <h1 class="text-3xl md:text-4xl font-bold text-heading mb-2">Survey Target Calculator</h1>
+        <p class="text-gray-200 max-w-lg mx-auto">
+          Calculate how many more surveys you need to reach your CSAT, FCR, and NPS targets
+        </p>
+      </div>
+
+      <div class="glass-card p-6 mb-8 max-w-4xl mx-auto">
+        <div class="grid grid-cols-1 gap-6">
+
+          <!-- Paste & Dropdown -->
+          <div id="paste-section" class="mb-6">
+  <label class="block text-sm font-medium mb-1 text-white">Paste Agents Data</label>
+  <textarea id="excel-paste" rows="1" placeholder="Paste here" class="w-full px-3 py-2 rounded-md bg-white bg-opacity-10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"></textarea>
+  <button onclick="parseMultipleAgents()" class="glass-button py-2 px-4 rounded-lg transition duration-200">Save Agents Data</button>
+</div>
+
+<!-- Hidden by default -->
+<div id="show-paste-again" class="mb-6 hidden">
+  <button onclick="reopenPasteSection()" class="glass-button py-2 px-4 rounded-lg transition duration-200">Edit Agents Data</button>
+</div>
+
+          <div class="mb-6">
+            <label class="block text-sm font-medium mb-1 text-white">Select Agent</label>
+            <select id="agent-select" onchange="loadAgentData()" class="w-full rounded-md px-3 py-2 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">-- Choose Agent --</option>
+            </select>
+          </div>
+
+          <!-- Manual Input -->
+          <div>
+            <h3 class="font-medium text-white mb-3">Manual Input</h3>
+            <div class="space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label class="block text-sm font-medium mb-1">CSAT (%)</label>
+                  <input type="number" id="manual-csat" min="0" max="100" class="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1">FCR (%)</label>
+                  <input type="number" id="manual-fcr" min="0" max="100" class="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1">NPS (%)</label>
+                  <input type="number" id="manual-nps" min="-100" max="100" class="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1">Survey Count</label>
+                  <input type="number" id="manual-count" min="0" class="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+              </div>
+
+              <ddiv class="pt-4 border-t border-gray-600">
+  <div class="mb-2">
+  <h3 class="font-medium text-white inline">
+    Target Values <span class="text-sm text-gray-400">(optional)</span>
+    <button id="toggle-target-btn" onclick="toggleTargets()" class="ml-2 text-sm text-blue-300 hover:text-blue-100 focus:outline-none inline">
+      Show
+    </button>
+  </h3>
+</div>
+
+  <div id="target-values" class="hidden grid grid-cols-3 gap-4">
+    <div>
+      <label class="block text-sm font-medium mb-1">CSAT Target (%)</label>
+      <input type="number" id="target-csat" min="0" max="100" value="89" class="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">FCR Target (%)</label>
+      <input type="number" id="target-fcr" min="0" max="100" value="89" class="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">NPS Target (%)</label>
+      <input type="number" id="target-nps" min="-100" max="100" value="36" class="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+  </div>
+</div>
+
+              <button onclick="setManualValues()" class="w-full glass-button py-2 px-4 rounded-lg transition duration-200 mt-6">
+                Update Metrics
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="glass-card p-6 mb-8 max-w-4xl mx-auto"">
+        <h2 class="text-xl font-semibold text-white mb-4">Current Metrics</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div class="rounded-lg p-4 border border-gray-600 bg-white bg-opacity-5">
+            <h3 class="font-medium text-white mb-2">CSAT</h3>
+            <p class="text-sm text-gray-300"><span id="current-csat" class="font-bold text-white">0</span>% (<span id="csat-count" class="font-medium">0</span> surveys)</p>
+          </div>
+          <div class="rounded-lg p-4 border border-gray-600 bg-white bg-opacity-5">
+            <h3 class="font-medium text-white mb-2">FCR</h3>
+            <p class="text-sm text-gray-300"><span id="current-fcr" class="font-bold text-white">0</span>% (<span id="fcr-count" class="font-medium">0</span> surveys)</p>
+          </div>
+          <div class="rounded-lg p-4 border border-gray-600 bg-white bg-opacity-5">
+            <h3 class="font-medium text-white mb-2">NPS</h3>
+            <p class="text-sm text-gray-300"><span id="current-nps" class="font-bold text-white">0</span>% (<span id="nps-count" class="font-medium">0</span> surveys)</p>
+          </div>
+        </div>
+
+        <h2 class="text-xl font-semibold text-white mb-4">Survey Requirements</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div id="csat-card" class="rounded-lg p-4 border text-white">
+            <h3 class="font-medium mb-2">CSAT</h3>
+            <p class="text-sm">You need <span id="csat-needed" class="font-bold">0</span> more surveys with score 5 to reach target.</p>
+          </div>
+          <div id="fcr-card" class="rounded-lg p-4 border text-white">
+            <h3 class="font-medium mb-2">FCR</h3>
+            <p class="text-sm">You need <span id="fcr-needed" class="font-bold">0</span> more surveys with score 1 to reach target.</p>
+          </div>
+          <div id="nps-card" class="rounded-lg p-4 border text-white">
+            <h3 class="font-medium mb-2">NPS</h3>
+            <p class="text-sm">You need <span id="nps-needed" class="font-bold">0</span> more surveys with score 1 to reach target.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    let surveyData = { csat: [], fcr: [], nps: [], count: 0 };
+    let TARGETS = { csat: 89, fcr: 89, nps: 36 };
+    let agents = {};
+
+    document.addEventListener('DOMContentLoaded', function () {
+      updateUI();
+    });
+
+    function setManualValues() {
+      const csat = parseFloat(document.getElementById('manual-csat').value) || 0;
+      const fcr = parseFloat(document.getElementById('manual-fcr').value) || 0;
+      const nps = parseFloat(document.getElementById('manual-nps').value) || 0;
+      const count = parseInt(document.getElementById('manual-count').value) || 0;
+
+      surveyData.csat = Array(count).fill(csat);
+      surveyData.fcr = Array(count).fill(fcr);
+      surveyData.nps = Array(count).fill(nps);
+      surveyData.count = count;
+
+      TARGETS.csat = parseFloat(document.getElementById('target-csat').value) || 89;
+      TARGETS.fcr = parseFloat(document.getElementById('target-fcr').value) || 89;
+      TARGETS.nps = parseFloat(document.getElementById('target-nps').value) || 36;
+
+      updateUI();
+    }
+
+    function calculateAverage(values) {
+      if (values.length === 0) return 0;
+      const sum = values.reduce((a, b) => a + b, 0);
+      return sum / values.length;
+    }
+
+    function calculateNeeded(currentAvg, target, count) {
+      if (currentAvg >= target) return 0;
+      let currentTotal = currentAvg * count;
+      let needed = 0;
+      let newTotal = currentTotal;
+      let newCount = count;
+
+      while ((newTotal / newCount) < target) {
+        newTotal += 100;
+        newCount++;
+        needed++;
+        if (needed > 1000) break;
+      }
+
+      return needed;
+    }
+
+    function updateCardStyle(cardId, needed) {
+      const card = document.getElementById(cardId);
+      if (needed > 0) {
+        card.classList.add('needs-surveys');
+        card.classList.remove('no-surveys-needed');
+      } else {
+        card.classList.add('no-surveys-needed');
+        card.classList.remove('needs-surveys');
+      }
+    }
+
+    function updateUI() {
+      const csatAvg = calculateAverage(surveyData.csat);
+      const fcrAvg = calculateAverage(surveyData.fcr);
+      const npsAvg = calculateAverage(surveyData.nps);
+      const surveyCount = surveyData.count;
+
+      document.getElementById('current-csat').textContent = csatAvg.toFixed(1);
+      document.getElementById('current-fcr').textContent = fcrAvg.toFixed(1);
+      document.getElementById('current-nps').textContent = npsAvg.toFixed(1);
+      document.getElementById('csat-count').textContent = surveyCount;
+      document.getElementById('fcr-count').textContent = surveyCount;
+      document.getElementById('nps-count').textContent = surveyCount;
+
+      const csatNeeded = calculateNeeded(csatAvg, TARGETS.csat, surveyCount);
+      const fcrNeeded = calculateNeeded(fcrAvg, TARGETS.fcr, surveyCount);
+      const npsNeeded = calculateNeeded(npsAvg, TARGETS.nps, surveyCount);
+
+      document.getElementById('csat-needed').textContent = csatNeeded;
+      document.getElementById('fcr-needed').textContent = fcrNeeded;
+      document.getElementById('nps-needed').textContent = npsNeeded;
+
+      updateCardStyle('csat-card', csatNeeded);
+      updateCardStyle('fcr-card', fcrNeeded);
+      updateCardStyle('nps-card', npsNeeded);
+    }
+
+    function parseMultipleAgents() {
+  const raw = document.getElementById("excel-paste").value.trim();
+  const lines = raw.split(/\r?\n/).map(line => line.trim()).filter(line => line !== "");
+
+  agents = {};
+  for (let i = 0; i < lines.length; i += 5) {
+    const name = lines[i];
+    const csat = parseFloat(lines[i + 1].replace(/[^\d.-]/g, '')) || 0;
+    const fcr = parseFloat(lines[i + 2].replace(/[^\d.-]/g, '')) || 0;
+    const nps = parseFloat(lines[i + 3].replace(/[^\d.-]/g, '')) || 0;
+    const count = parseInt(lines[i + 4].replace(/[^\d]/g, '')) || 0;
+
+    agents[name] = { csat, fcr, nps, count };
+  }
+
+  populateAgentDropdown();
+    }
+
+    function populateAgentDropdown() {
+      const dropdown = document.getElementById("agent-select");
+      dropdown.innerHTML = '<option value="">-- Choose Agent --</option>';
+      Object.keys(agents).forEach(name => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        dropdown.appendChild(option);
+      });
+    }
+
+    function loadAgentData() {
+      const name = document.getElementById("agent-select").value;
+      if (!name || !agents[name]) return;
+
+      const { csat, fcr, nps, count } = agents[name];
+      document.getElementById("manual-csat").value = csat;
+      document.getElementById("manual-fcr").value = fcr;
+      document.getElementById("manual-nps").value = nps;
+      document.getElementById("manual-count").value = count;
+
+      setManualValues();
+    }
+
+    function parseMultipleAgents() {
+  const raw = document.getElementById("excel-paste").value.trim();
+  const lines = raw.split(/\r?\n/).map(line => line.trim()).filter(line => line !== "");
+
+  agents = {};
+  for (let i = 0; i < lines.length; i += 5) {
+    const name = lines[i];
+    const csat = parseFloat(lines[i + 1].replace(/[^\d.-]/g, '')) || 0;
+    const fcr = parseFloat(lines[i + 2].replace(/[^\d.-]/g, '')) || 0;
+    const nps = parseFloat(lines[i + 3].replace(/[^\d.-]/g, '')) || 0;
+    const count = parseInt(lines[i + 4].replace(/[^\d]/g, '')) || 0;
+
+    agents[name] = { csat, fcr, nps, count };
+  }
+
+  populateAgentDropdown();
+
+  // Hide paste area
+  document.getElementById("paste-section").classList.add("hidden");
+  document.getElementById("show-paste-again").classList.remove("hidden");
+}
+
+function reopenPasteSection() {
+  // Clear data
+  document.getElementById("excel-paste").value = "";
+  document.getElementById("agent-select").innerHTML = '<option value="">-- Choose Agent --</option>';
+  agents = {};
+
+  document.getElementById("paste-section").classList.remove("hidden");
+  document.getElementById("show-paste-again").classList.add("hidden");
+}
+
+function toggleTargets() {
+  const section = document.getElementById("target-values");
+  const toggleBtn = document.getElementById("toggle-target-btn");
+
+  const isHidden = section.classList.contains("hidden");
+
+  section.classList.toggle("hidden");
+  toggleBtn.textContent = isHidden ? "Hide" : "Show";
+}
+  </script>
+<p style="border-radius: 8px; text-align: center; font-size: 12px; color: #fff; margin-top: 16px;position: fixed; left: 8px; bottom: 8px; z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 4px 8px;">Made with <img src="https://enzostvs-deepsite.hf.space/logo.svg" alt="DeepSite Logo" style="width: 16px; height: 16px; vertical-align: middle;display:inline-block;margin-right:3px;filter:brightness(0) invert(1);"><a href="https://enzostvs-deepsite.hf.space" style="color: #fff;text-decoration: underline;" target="_blank" >DeepSite</a> - 🧬 <a href="https://enzostvs-deepsite.hf.space?remix=yahia197/stc-for-all" style="color: #fff;text-decoration: underline;" target="_blank" >Remix</a></p></body>
+</html>
